@@ -1,6 +1,6 @@
 name: corly
-description: "A new Flutter project."
-publish_to: 'none'
+description: "Coral Bleaching Detection App using YOLOv10"
+publish_to: "none"
 version: 0.1.0+1
 
 environment:
@@ -10,6 +10,31 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # State Management
+  provider: ^6.1.1
+
+  # TensorFlow Lite for YOLOv10 inference
+  tflite_flutter: ^0.10.4
+
+  # Image & Video Processing
+  image_picker: ^1.0.7
+  video_player: ^2.8.2
+  camera: ^0.10.5+9
+  image: ^4.1.7
+
+  # File & Path Management
+  path_provider: ^2.1.2
+  path: ^1.9.0
+
+  # CSV Export
+  csv: ^6.0.0
+
+  # Permissions
+  permission_handler: ^11.2.0
+
+  # UI Components
+  flutter_spinkit: ^5.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -17,3 +42,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Assets folder untuk model dan gambar
+  assets:
+    - assets/models/
+    - assets/images/

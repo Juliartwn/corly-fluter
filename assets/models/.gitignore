@@ -1,0 +1,9 @@
+# Ignore model files (too large for git)
+*.tflite
+*.onnx
+*.pt
+*.pth
+
+# Keep the README and labels
+!README.md
+!labels.txt
