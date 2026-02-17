@@ -1,3 +1,4 @@
 {
-  "cmake.sourceDirectory": "C:/Coding/skripsi/fluter/corly/windows/flutter"
+  "cmake.sourceDirectory": "C:/Coding/skripsi/fluter/corly/windows/flutter",
+  "java.configuration.updateBuildConfiguration": "interactive"
 }
