@@ -12,7 +12,7 @@ class AppConstants {
 
   // Detection Thresholds
   static const double confidenceThreshold = 0.5; // Minimum confidence score
-  static const double iouThreshold = 0.45; // IoU threshold for NMS
+  // Note: YOLOv10 is NMS-free, no IoU threshold needed
 
   // Performance Configuration
   static const int maxInferenceTimeMs = 500; // Maximum 500ms per frame
@@ -22,13 +22,12 @@ class AppConstants {
   // Device Requirements
   static const int minRamGB = 4; // Minimum RAM requirement
 
-  // Class Labels
-  static const List<String> classLabels = ['healthy_coral', 'bleached_coral'];
+  // Class Labels (hanya 1 class: bleaching)
+  static const List<String> classLabels = ['bleaching'];
 
   // Colors for Bounding Boxes
   static const Map<String, int> classColors = {
-    'healthy_coral': 0xFF00FF00, // Green
-    'bleached_coral': 0xFFFF0000, // Red
+    'bleaching': 0xFFFF0000, // Red for bleaching detection
   };
 
   // Export Settings

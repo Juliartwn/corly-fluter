@@ -70,20 +70,27 @@ flutter run
 
 ## 📊 Model Configuration
 
+- **Model**: YOLOv10 (NMS-free architecture)
 - **Input Size**: 640×640 pixels
 - **Model Format**: TensorFlow Lite (.tflite)
 - **Quantization**: Optimized untuk mobile
 - **Confidence Threshold**: 0.5
-- **IoU Threshold**: 0.45 (NMS)
 - **Max Inference Time**: 500ms per frame
 - **Target FPS**: 10 FPS (real-time)
 
+### YOLOv10 Advantages:
+
+- ✅ **NMS-free** - Dual label assignments untuk prediksi lebih akurat
+- ✅ **Faster inference** - Tidak perlu post-processing NMS
+- ✅ **Better for real-time** - Lebih efisien untuk mobile devices
+
 ## 🔧 Performance Optimization
 
-1. **Model Quantization** - Mengurangi ukuran model
-2. **Input Resizing** - 640×640 pixels
-3. **Frame Skipping** - Skip 2 frames untuk performa
-4. **Isolate Computation** - Inference di background thread
+1. **YOLOv10 NMS-free** - Tidak perlu Non-Maximum Suppression
+2. **Model Quantization** - Mengurangi ukuran model
+3. **Input Resizing** - 640×640 pixels
+4. **Frame Skipping** - Skip 2 frames untuk performa
+5. **Isolate Computation** - Inference di background thread
 
 ## 📦 Dependencies
 

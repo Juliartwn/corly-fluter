@@ -1,2 +1,1 @@
-healthy_coral
-bleached_coral
+bleaching
