@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/detection_provider.dart';
+import 'image_detection_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -116,8 +117,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.green,
                     enabled: provider.isInitialized && !provider.isLoading,
                     onTap: () {
-                      // TODO: Navigate to Image Detection Screen
-                      _showComingSoon(context, 'Image Detection');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ImageDetectionScreen(),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
