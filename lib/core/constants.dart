@@ -1,8 +1,7 @@
 /// App Constants untuk konfigurasi deteksi coral bleaching
 class AppConstants {
   // Model Configuration
-  static const String modelPath =
-      'assets/models/yolov10_coral_bleaching.tflite';
+  static const String modelPath = 'assets/models/best.tflite';
   static const String labelsPath = 'assets/models/labels.txt';
 
   // Model Input/Output Configuration
