@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:image/image.dart' as img;
 import '../../providers/detection_provider.dart';
 import '../widgets/bounding_box_painter.dart';
 
@@ -15,6 +16,7 @@ class ImageDetectionScreen extends StatefulWidget {
 class _ImageDetectionScreenState extends State<ImageDetectionScreen> {
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
+  Size? _imageSize; // Store actual image dimensions
 
   /// Pick image dari gallery
   Future<void> _pickImageFromGallery() async {
@@ -25,9 +27,21 @@ class _ImageDetectionScreenState extends State<ImageDetectionScreen> {
       );
 
       if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-        });
+        final file = File(image.path);
+
+        // Load image to get dimensions
+        final bytes = await file.readAsBytes();
+        final decodedImage = img.decodeImage(bytes);
+
+        if (decodedImage != null) {
+          setState(() {
+            _selectedImage = file;
+            _imageSize = Size(
+              decodedImage.width.toDouble(),
+              decodedImage.height.toDouble(),
+            );
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -50,9 +64,21 @@ class _ImageDetectionScreenState extends State<ImageDetectionScreen> {
       );
 
       if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-        });
+        final file = File(image.path);
+
+        // Load image to get dimensions
+        final bytes = await file.readAsBytes();
+        final decodedImage = img.decodeImage(bytes);
+
+        if (decodedImage != null) {
+          setState(() {
+            _selectedImage = file;
+            _imageSize = Size(
+              decodedImage.width.toDouble(),
+              decodedImage.height.toDouble(),
+            );
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -124,6 +150,7 @@ class _ImageDetectionScreenState extends State<ImageDetectionScreen> {
   void _reset() {
     setState(() {
       _selectedImage = null;
+      _imageSize = null;
     });
     context.read<DetectionProvider>().reset();
   }
@@ -197,50 +224,52 @@ class _ImageDetectionScreenState extends State<ImageDetectionScreen> {
 
   /// Gambar dengan bounding boxes
   Widget _buildImageWithDetections(DetectionProvider provider) {
+    // Gunakan aspect ratio dari image yang sudah di-load
+    final aspectRatio = _imageSize != null
+        ? _imageSize!.width / _imageSize!.height
+        : 1.0;
+
     return Center(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Image
-          Image.file(_selectedImage!, fit: BoxFit.contain),
+      child: AspectRatio(
+        aspectRatio: aspectRatio,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Image
+            Image.file(_selectedImage!, fit: BoxFit.contain),
 
-          // Bounding boxes overlay
-          if (provider.hasResult)
-            Positioned.fill(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return CustomPaint(
-                    painter: BoundingBoxPainter(
-                      detections: provider.currentResult!.detections,
-                      imageSize: Size(
-                        provider.currentResult!.imageWidth.toDouble(),
-                        provider.currentResult!.imageHeight.toDouble(),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-          // Loading overlay
-          if (provider.isLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 16),
-                    Text(
-                      'Memproses deteksi...',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ],
+            // Bounding boxes overlay
+            if (provider.hasResult)
+              CustomPaint(
+                painter: BoundingBoxPainter(
+                  detections: provider.currentResult!.detections,
+                  imageSize: Size(
+                    provider.currentResult!.imageWidth.toDouble(),
+                    provider.currentResult!.imageHeight.toDouble(),
+                  ),
                 ),
               ),
-            ),
-        ],
+
+            // Loading overlay
+            if (provider.isLoading)
+              Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: Colors.white),
+                      SizedBox(height: 16),
+                      Text(
+                        'Memproses deteksi...',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

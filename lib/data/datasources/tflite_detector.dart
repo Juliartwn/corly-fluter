@@ -210,10 +210,12 @@ class TFLiteDetector {
         continue;
       }
 
-      final xCenter = predList[0] as double;
-      final yCenter = predList[1] as double;
-      final width = predList[2] as double;
-      final height = predList[3] as double;
+      // YOLOv10 output format: [x1, y1, x2, y2, confidence, class_id]
+      // Dalam normalized coordinates (0-1)
+      final x1Norm = predList[0] as double;
+      final y1Norm = predList[1] as double;
+      final x2Norm = predList[2] as double;
+      final y2Norm = predList[3] as double;
       final classId = predList.length > 5 ? (predList[5] as double).toInt() : 0;
 
       // Get label
@@ -221,17 +223,28 @@ class TFLiteDetector {
           ? _labels![classId]
           : 'bleaching';
 
-      // Create detection
-      final detection = Detection.fromNormalized(
-        x: xCenter,
-        y: yCenter,
-        width: width,
-        height: height,
+      // Scale normalized coordinates (0-1) ke pixel coordinates
+      final left = x1Norm * originalWidth;
+      final top = y1Norm * originalHeight;
+      final right = x2Norm * originalWidth;
+      final bottom = y2Norm * originalHeight;
+
+      // Clamp ke image bounds
+      final clampedLeft = left.clamp(0.0, originalWidth.toDouble());
+      final clampedTop = top.clamp(0.0, originalHeight.toDouble());
+      final clampedRight = right.clamp(0.0, originalWidth.toDouble());
+      final clampedBottom = bottom.clamp(0.0, originalHeight.toDouble());
+
+      final detection = Detection(
+        boundingBox: Rect.fromLTRB(
+          clampedLeft,
+          clampedTop,
+          clampedRight,
+          clampedBottom,
+        ),
         confidence: confidence,
         label: label,
         classId: classId,
-        imageWidth: originalWidth,
-        imageHeight: originalHeight,
       );
 
       detections.add(detection);
