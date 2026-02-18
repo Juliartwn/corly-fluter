@@ -6,9 +6,11 @@ import FlutterMacOS
 import Foundation
 
 import file_selector_macos
+import tflite_flutter_plus
 import video_player_avfoundation
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))
+  TfliteFlutterPlusPlugin.register(with: registry.registrar(forPlugin: "TfliteFlutterPlusPlugin"))
   FVPVideoPlayerPlugin.register(with: registry.registrar(forPlugin: "FVPVideoPlayerPlugin"))
 }
