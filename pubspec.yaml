@@ -14,7 +14,7 @@ dependencies:
   provider: ^6.1.1
 
   # TensorFlow Lite for YOLOv10 inference
-  tflite_flutter_plus: ^0.0.1
+  tflite_flutter: ^0.11.0
 
   # Image & Video Processing
   image_picker: ^1.0.7
