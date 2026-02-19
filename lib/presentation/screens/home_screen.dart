@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/detection_provider.dart';
 import 'image_detection_screen.dart';
+import 'video_detection_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -133,9 +134,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     title: 'Video Detection',
                     subtitle: 'Upload video bawah air',
                     color: Colors.orange,
-                    enabled: false, // Coming soon
+                    enabled: provider.isInitialized && !provider.isLoading,
                     onTap: () {
-                      _showComingSoon(context, 'Video Detection');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const VideoDetectionScreen(),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
