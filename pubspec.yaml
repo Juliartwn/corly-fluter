@@ -19,6 +19,7 @@ dependencies:
   # Image & Video Processing
   image_picker: ^1.0.7
   video_player: ^2.8.2
+  video_thumbnail: ^0.5.3
   camera: ^0.10.5+9
   image: ^4.1.7
 
