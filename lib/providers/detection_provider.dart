@@ -35,6 +35,7 @@ class DetectionProvider extends ChangeNotifier {
       _state == DetectionState.detecting;
   bool get hasResult =>
       _currentResult != null && _state == DetectionState.success;
+  List<Detection> get detections => _currentResult?.detections ?? [];
 
   /// Initialize TFLite model
   Future<void> initialize() async {

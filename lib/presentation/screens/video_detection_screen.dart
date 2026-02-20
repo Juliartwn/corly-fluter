@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 import '../../providers/detection_provider.dart';
+import '../../data/models/detection.dart';
+import '../widgets/bounding_box_painter.dart';
 
 class VideoDetectionScreen extends StatefulWidget {
   const VideoDetectionScreen({super.key});
@@ -21,10 +26,37 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
   int _totalDetections = 0;
   String _processingStatus = '';
 
+  // Map untuk menyimpan deteksi per timestamp (dalam detik)
+  Map<int, List<Detection>> _detectionsByTimestamp = {};
+  Map<int, Size> _imageSizeByTimestamp = {};
+
+  // Current detections untuk ditampilkan
+  List<Detection>? _currentDetections;
+  Size? _currentImageSize;
+
   @override
   void dispose() {
+    _videoController?.removeListener(_onVideoPositionChanged);
     _videoController?.dispose();
     super.dispose();
+  }
+
+  void _onVideoPositionChanged() {
+    if (_videoController == null || !_videoController!.value.isInitialized) {
+      return;
+    }
+
+    final currentPosition = _videoController!.value.position.inSeconds;
+
+    // Cari detections terdekat dengan current position
+    if (_detectionsByTimestamp.containsKey(currentPosition)) {
+      if (mounted) {
+        setState(() {
+          _currentDetections = _detectionsByTimestamp[currentPosition];
+          _currentImageSize = _imageSizeByTimestamp[currentPosition];
+        });
+      }
+    }
   }
 
   Future<void> _pickVideo() async {
@@ -46,6 +78,9 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
         _videoController = VideoPlayerController.file(_videoFile!);
 
         await _videoController!.initialize();
+
+        // Add listener untuk track video position
+        _videoController!.addListener(_onVideoPositionChanged);
 
         setState(() {
           _isVideoInitialized = true;
@@ -92,47 +127,100 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
       _processingStatus = 'Initializing...';
     });
 
+    final provider = context.read<DetectionProvider>();
+
     try {
       final duration = _videoController!.value.duration;
       final durationInSeconds = duration.inSeconds;
 
-      // Process 1 frame per second
-      final totalFrames = durationInSeconds;
+      // Process 1 frame setiap 2 detik untuk performa lebih baik
+      final frameInterval = 2; // detik
+      final totalFrames = (durationInSeconds / frameInterval).ceil();
+
+      // Get temp directory untuk simpan thumbnails
+      final tempDir = await getTemporaryDirectory();
 
       for (int i = 0; i < totalFrames; i++) {
         if (!_isProcessing) break; // User cancelled
 
+        final timeMs = i * frameInterval * 1000; // Convert to milliseconds
+
         setState(() {
-          _processingStatus = 'Processing frame ${i + 1}/$totalFrames...';
+          _processingStatus = 'Extracting frame ${i + 1}/$totalFrames...';
         });
 
-        // Seek to specific position
-        await _videoController!.seekTo(Duration(seconds: i));
-        await Future.delayed(
-          const Duration(milliseconds: 200),
-        ); // Wait for frame
+        // Yield to UI thread
+        await Future.delayed(const Duration(milliseconds: 50));
 
-        // Capture current frame
-        // Note: This is a simplified version. In production, you'd need
-        // a proper frame extraction mechanism or use a plugin
+        // Generate thumbnail at specific timestamp
+        final thumbnailPath = await VideoThumbnail.thumbnailFile(
+          video: _videoFile!.path,
+          thumbnailPath: tempDir.path,
+          imageFormat: ImageFormat.PNG,
+          timeMs: timeMs,
+          quality: 75, // Reduce quality untuk performa lebih baik
+        );
+
+        if (thumbnailPath == null || !_isProcessing) {
+          continue;
+        }
+
+        setState(() {
+          _processingStatus = 'Analyzing frame ${i + 1}/$totalFrames...';
+        });
+
+        // Yield to UI thread
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        // Load thumbnail as image
+        final thumbnailFile = File(thumbnailPath);
+        final bytes = await thumbnailFile.readAsBytes();
+        final image = img.decodeImage(bytes);
+
+        if (image == null) {
+          continue;
+        }
+
+        // Run detection
+        await provider.detectFromImage(image);
+
+        // Simpan detection results dengan timestamp (dalam detik)
+        final timestamp = i * frameInterval;
+        final detectionCount = provider.detections.length;
+
+        if (detectionCount > 0) {
+          _detectionsByTimestamp[timestamp] = List.from(provider.detections);
+          _imageSizeByTimestamp[timestamp] = Size(
+            image.width.toDouble(),
+            image.height.toDouble(),
+          );
+        }
 
         setState(() {
           _totalFramesProcessed = i + 1;
+          _totalDetections += detectionCount;
         });
+
+        // Clean up thumbnail file
+        try {
+          await thumbnailFile.delete();
+        } catch (_) {}
       }
 
       setState(() {
         _isProcessing = false;
-        _processingStatus = 'Processing complete!';
+        _processingStatus =
+            'Processing complete! Found $_totalDetections bleaching detections in $_totalFramesProcessed frames.';
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Processed $_totalFramesProcessed frames with $_totalDetections detections',
+              'Processed $_totalFramesProcessed frames\nFound $_totalDetections bleaching detections',
             ),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -161,6 +249,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
   }
 
   void _reset() {
+    _videoController?.removeListener(_onVideoPositionChanged);
     _videoController?.dispose();
     _videoController = null;
 
@@ -171,6 +260,10 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
       _totalFramesProcessed = 0;
       _totalDetections = 0;
       _processingStatus = '';
+      _detectionsByTimestamp.clear();
+      _imageSizeByTimestamp.clear();
+      _currentDetections = null;
+      _currentImageSize = null;
     });
   }
 
@@ -384,8 +477,20 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
     return AspectRatio(
       aspectRatio: _videoController!.value.aspectRatio,
       child: Stack(
+        fit: StackFit.expand,
         children: [
           VideoPlayer(_videoController!),
+
+          // Bounding box overlay
+          if (_currentDetections != null && _currentImageSize != null)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: BoundingBoxPainter(
+                  detections: _currentDetections!,
+                  imageSize: _currentImageSize!,
+                ),
+              ),
+            ),
 
           // Playback controls
           Positioned(
