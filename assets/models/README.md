@@ -4,17 +4,17 @@ Letakkan file-file model YOLOv10 di folder ini:
 
 ## Required Files:
 
-1. **yolov10_coral_bleaching.tflite**
-   - Model YOLOv10 yang sudah dikonversi ke format TensorFlow Lite
+1. **best.tflite**
+   - Model YOLOv10 (14.6 MB) yang sudah dikonversi ke format TensorFlow Lite
+   - Input: `[1, 640, 640, 3]` (RGB image 640×640)
+   - Output: `[1, 300, 6]` (format: [x1, y1, x2, y2, confidence, class_id])
    - Proses konversi: PyTorch → ONNX → TFLite
-   - Sudah di-quantize untuk optimasi performa
 
 2. **labels.txt**
    - File berisi label class (satu label per baris)
    - Format:
      ```
-     healthy_coral
-     bleached_coral
+     bleaching
      ```
 
 ## Cara Konversi Model (Reference):
@@ -36,19 +36,20 @@ pip install onnx-tf
 onnx-tf convert -i yolov10_coral.onnx -o yolov10_coral_tf
 ```
 
-### 3. TensorFlow to TFLite dengan Quantization
+### 3. TensorFlow to TFLite
 
 ```python
 import tensorflow as tf
 
 converter = tf.lite.TFLiteConverter.from_saved_model('yolov10_coral_tf')
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
 tflite_model = converter.convert()
 
-with open('yolov10_coral_bleaching.tflite', 'wb') as f:
+with open('best.tflite', 'wb') as f:
     f.write(tflite_model)
 ```
 
 ## Note:
 
-Pastikan ukuran input model adalah 640x640 pixels sesuai dengan konfigurasi di `AppConstants`.
+- Pastikan ukuran input model adalah 640x640 pixels sesuai dengan konfigurasi di `AppConstants`
+- Model output format: `[x1, y1, x2, y2, confidence, class_id]` (normalized 0-1)
+- Confidence threshold: 0.5 (dapat dikonfigurasi)

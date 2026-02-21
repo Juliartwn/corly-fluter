@@ -4,38 +4,46 @@ Aplikasi mobile berbasis Flutter untuk deteksi bleaching pada terumbu karang men
 
 ## 📱 Fitur Utama
 
-1. **Upload & Deteksi dari Foto**
-   - Unggah foto terumbu karang dari galeri
-   - Deteksi otomatis area bleaching
-   - Tampilkan bounding box dengan confidence score
+1. **Image Detection**
+   - Upload foto terumbu karang dari galeri atau kamera
+   - Deteksi otomatis area bleaching dengan YOLOv10
+   - Tampilkan bounding box dengan label dan confidence score
+   - Statistik deteksi: jumlah bleaching, confidence rata-rata, area coverage
 
-2. **Upload & Deteksi dari Video**
-   - Unggah video rekaman bawah air
-   - Proses frame-by-frame detection
-   - Simpan sebagai annotated video
-
-3. **Real-Time Detection**
-   - Deteksi langsung menggunakan kamera
-   - Real-time bounding box overlay
-   - Target 10 FPS dengan minimal 4GB RAM
+2. **Video Detection**
+   - Upload video rekaman bawah air dari galeri
+   - Proses frame-by-frame detection (setiap 2 detik)
+   - Real-time bounding box overlay saat playback
+   - Statistik: total frames, total detections, average detections per frame
 
 ## 🏗️ Arsitektur
 
-Aplikasi menggunakan **Clean Architecture Pattern**:
+Aplikasi menggunakan **Clean Architecture Pattern** dengan **Provider** untuk state management:
 
 ```
 lib/
 ├── core/                    # Core utilities dan constants
-│   ├── constants.dart       # Konfigurasi app
+│   ├── constants/
+│   │   └── app_constants.dart   # Konfigurasi app (model size, threshold, dll)
 │   └── utils/               # Helper functions
 ├── data/                    # Data layer
-│   ├── datasources/         # TFLite detector
-│   ├── models/              # Data models
-│   └── repositories/        # Repository implementations
+│   ├── datasources/
+│   │   └── tflite_detector.dart # YOLOv10 TFLite detector
+│   ├── models/
+│   │   ├── detection.dart        # Detection box model
+│   │   └── detection_result.dart # Detection result dengan statistik
+│   └── repositories/
+│       └── detection_repository.dart # Repository pattern
 ├── presentation/            # Presentation layer
-│   ├── screens/             # UI screens
-│   └── widgets/             # Reusable widgets
-└── providers/               # State management (Provider)
+│   ├── screens/
+│   │   ├── home_screen.dart           # Main menu
+│   │   ├── image_detection_screen.dart # Image detection UI
+│   │   └── video_detection_screen.dart # Video detection UI
+│   └── widgets/
+│       └── bounding_box_painter.dart  # Custom painter untuk bounding boxes
+├── providers/               # State management
+│   └── detection_provider.dart        # Provider untuk detection state
+└── main.dart                # Entry point
 ```
 
 ## 🚀 Setup & Installation
@@ -44,7 +52,7 @@ lib/
 
 - Flutter SDK: >=3.11.0
 - Android SDK: minSdk 24
-- RAM minimal: 4GB (untuk device testing)
+- Dart SDK: >=3.11.0
 
 ### 1. Clone & Install Dependencies
 
@@ -57,10 +65,13 @@ flutter pub get
 
 Letakkan file model di `assets/models/`:
 
-- `yolov10_coral_bleaching.tflite` (model YOLOv10 yang sudah dikonversi)
-- `labels.txt` (sudah tersedia)
+- `best.tflite` - YOLOv10 model (14.6 MB)
+- `labels.txt` - Class labels (1 line: "bleaching")
 
-Lihat `assets/models/README.md` untuk panduan konversi model.
+Format model:
+
+- Input: `[1, 640, 640, 3]` (RGB image)
+- Output: `[1, 300, 6]` (detections dengan format [x1, y1, x2, y2, confidence, class_id])
 
 ### 3. Run App
 
@@ -73,24 +84,39 @@ flutter run
 - **Model**: YOLOv10 (NMS-free architecture)
 - **Input Size**: 640×640 pixels
 - **Model Format**: TensorFlow Lite (.tflite)
-- **Quantization**: Optimized untuk mobile
+- **Model Size**: 14.6 MB
+- **Output Format**: `[x1, y1, x2, y2, confidence, class_id]` (normalized 0-1)
 - **Confidence Threshold**: 0.5
-- **Max Inference Time**: 500ms per frame
-- **Target FPS**: 10 FPS (real-time)
+- **Max Detections**: 300
 
 ### YOLOv10 Advantages:
 
-- ✅ **NMS-free** - Dual label assignments untuk prediksi lebih akurat
-- ✅ **Faster inference** - Tidak perlu post-processing NMS
-- ✅ **Better for real-time** - Lebih efisien untuk mobile devices
+- ✅ **NMS-free** - Tidak perlu Non-Maximum Suppression post-processing
+- ✅ **Faster inference** - Lebih cepat dibanding YOLO v8/v9
+- ✅ **Better accuracy** - Dual label assignments untuk prediksi lebih akurat
+- ✅ **Mobile optimized** - Efisien untuk mobile devices
 
-## 🔧 Performance Optimization
+## 🎯 Detection Flow
 
-1. **YOLOv10 NMS-free** - Tidak perlu Non-Maximum Suppression
-2. **Model Quantization** - Mengurangi ukuran model
-3. **Input Resizing** - 640×640 pixels
-4. **Frame Skipping** - Skip 2 frames untuk performa
-5. **Isolate Computation** - Inference di background thread
+### Image Detection
+
+1. User pilih foto dari galeri atau ambil dengan kamera
+2. Image di-decode dan ukuran asli disimpan untuk scaling
+3. Image di-preprocess (resize 640x640, normalize)
+4. Run inference dengan YOLOv10 TFLite
+5. Post-process output: filter by confidence, scale coordinates
+6. Tampilkan image dengan bounding box overlay
+7. Hitung statistik: count, avg confidence, coverage %
+
+### Video Detection
+
+1. User pilih video dari galeri
+2. Extract frame setiap 2 detik (optimasi performa)
+3. Generate thumbnail untuk setiap timestamp
+4. Run detection pada setiap frame
+5. Simpan hasil deteksi per timestamp
+6. User dapat play video dengan bounding box real-time overlay
+7. Tampilkan statistik total frames dan detections
 
 ## 📦 Dependencies
 
@@ -103,57 +129,64 @@ flutter run
 
 - `image_picker: ^1.0.7` - Pick images/videos
 - `video_player: ^2.8.2` - Video playback
+- `video_thumbnail: ^0.5.3` - Video frame extraction
 - `camera: ^0.10.5+9` - Camera access
 - `image: ^4.1.7` - Image processing
 
-### Storage & Export
+### Storage
 
 - `path_provider: ^2.1.2` - File paths
-- `csv: ^6.0.0` - Export to CSV
 - `permission_handler: ^11.2.0` - Permissions
 
 ## 📝 Class Labels
 
-- `healthy_coral` - Terumbu karang sehat (hijau)
-- `bleached_coral` - Terumbu karang bleaching (merah)
-
-## 🎨 Export Features
-
-- Annotated images dengan bounding boxes
-- Annotated videos
-- CSV reports dengan statistik deteksi
+- `bleaching` - Terumbu karang bleaching (merah)
 
 ## 📱 Device Requirements
 
 - **OS**: Android 7.0+ (API Level 24+)
 - **RAM**: Minimal 4GB
 - **Storage**: ~100MB untuk app + model
-- **Camera**: Optional (untuk real-time detection)
 
 ## 🔐 Permissions
 
-- `CAMERA` - Real-time detection
 - `READ_EXTERNAL_STORAGE` - Upload foto/video
 - `WRITE_EXTERNAL_STORAGE` - Simpan hasil
 - `READ_MEDIA_IMAGES/VIDEO` - Android 13+
+- `CAMERA` - Ambil foto langsung
 
 ## 📖 Development Status
 
-✅ **Setup & Configuration** - COMPLETED
+✅ **COMPLETED**
 
-- [x] Dependencies installed
-- [x] Project structure created
-- [x] Constants configured
-- [x] Android permissions setup
-- [x] TFLite configuration
+- [x] Project setup & configuration
+- [x] Dependencies installed & configured
+- [x] TFLite model integration (YOLOv10)
+- [x] Data models & repository pattern
+- [x] State management with Provider
+- [x] Image Detection screen
+  - [x] Pick from gallery
+  - [x] Take photo with camera
+  - [x] Bounding box overlay
+  - [x] Detection statistics
+- [x] Video Detection screen
+  - [x] Pick from gallery
+  - [x] Frame-by-frame processing (every 2 seconds)
+  - [x] Real-time bounding box overlay during playback
+  - [x] Detection statistics per timestamp
+- [x] Bounding box rendering with CustomPaint
+- [x] Performance optimization
+  - [x] Frame interval optimization (2 seconds)
+  - [x] Thumbnail quality optimization (75%)
+  - [x] UI yielding to prevent frame drops
 
-⏳ **Next Steps** (Coming soon):
+## 🎯 Future Enhancements
 
-- [ ] Data models & repository
-- [ ] TFLite detector implementation
-- [ ] State management with Provider
-- [ ] UI screens & widgets
-- [ ] Testing & optimization
+- [ ] Export annotated images/videos
+- [ ] CSV report generation
+- [ ] Multiple model support
+- [ ] Batch processing
+- [ ] Cloud storage integration
 
 ## 👨‍💻 Author
 
