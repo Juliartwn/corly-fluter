@@ -144,19 +144,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
-
-                  _buildFeatureButton(
-                    context,
-                    icon: Icons.camera_alt,
-                    title: 'Real-Time Detection',
-                    subtitle: 'Deteksi langsung dengan kamera',
-                    color: Colors.red,
-                    enabled: false, // Coming soon
-                    onTap: () {
-                      _showComingSoon(context, 'Real-Time Detection');
-                    },
-                  ),
 
                   const SizedBox(height: 48),
 
@@ -313,16 +300,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature - Coming Soon!'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.blue,
       ),
     );
   }
