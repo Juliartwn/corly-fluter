@@ -84,7 +84,7 @@ flutter run
 - **Model**: YOLOv10 (NMS-free architecture)
 - **Input Size**: 640×640 pixels
 - **Model Format**: TensorFlow Lite (.tflite)
-- **Model Size**: 14.6 MB
+- **Model Size**: 15.8 MB
 - **Output Format**: `[x1, y1, x2, y2, confidence, class_id]` (normalized 0-1)
 - **Confidence Threshold**: 0.5
 - **Max Detections**: 300

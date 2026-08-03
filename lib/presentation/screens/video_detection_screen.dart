@@ -27,8 +27,8 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
   String _processingStatus = '';
 
   // Map untuk menyimpan deteksi per timestamp (dalam detik)
-  Map<int, List<Detection>> _detectionsByTimestamp = {};
-  Map<int, Size> _imageSizeByTimestamp = {};
+  final Map<int, List<Detection>> _detectionsByTimestamp = {};
+  final Map<int, Size> _imageSizeByTimestamp = {};
 
   // Current detections untuk ditampilkan
   List<Detection>? _currentDetections;
