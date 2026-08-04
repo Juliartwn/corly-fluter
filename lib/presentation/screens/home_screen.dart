@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const SizedBox(height: 12),
 
-                    // ==== Logo (background transparan, tanpa bulatan solid) ====
+                    // ==== Logo ====
                     Container(
                       width: 170,
                       height: 170,
