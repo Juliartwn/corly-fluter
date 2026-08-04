@@ -8,6 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 import '../../providers/detection_provider.dart';
 import '../../data/models/detection.dart';
+import '../../theme/colors.dart';
+import '../../theme/toast.dart';
 import '../widgets/bounding_box_painter.dart';
 
 class VideoDetectionScreen extends StatefulWidget {
@@ -26,7 +28,9 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
   int _totalDetections = 0;
   String _processingStatus = '';
 
-  // Map untuk menyimpan deteksi per timestamp (dalam detik)
+  static const int _frameMatchToleranceMs = 500;
+
+  // Map untuk menyimpan deteksi per timestamp (dalam milidetik)
   final Map<int, List<Detection>> _detectionsByTimestamp = {};
   final Map<int, Size> _imageSizeByTimestamp = {};
 
@@ -41,22 +45,58 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
     super.dispose();
   }
 
+  int? _getMatchingFrameTimestamp(int currentPositionMs) {
+    if (_detectionsByTimestamp.isEmpty) {
+      return null;
+    }
+
+    final exactMatch = _detectionsByTimestamp.keys.firstWhere(
+      (timestamp) => timestamp == currentPositionMs,
+      orElse: () => -1,
+    );
+
+    if (exactMatch != -1) {
+      return exactMatch;
+    }
+
+    final timestamps = _detectionsByTimestamp.keys.toList()..sort();
+    for (final timestamp in timestamps) {
+      if ((timestamp - currentPositionMs).abs() <= _frameMatchToleranceMs) {
+        return timestamp;
+      }
+    }
+
+    return null;
+  }
+
   void _onVideoPositionChanged() {
     if (_videoController == null || !_videoController!.value.isInitialized) {
       return;
     }
 
-    final currentPosition = _videoController!.value.position.inSeconds;
+    final currentPositionMs = _videoController!.value.position.inMilliseconds;
+    final matchingTimestamp = _getMatchingFrameTimestamp(currentPositionMs);
+    final detections = matchingTimestamp != null
+        ? _detectionsByTimestamp[matchingTimestamp]
+        : null;
+    final imageSize = matchingTimestamp != null
+        ? _imageSizeByTimestamp[matchingTimestamp]
+        : null;
 
-    // Cari detections terdekat dengan current position
-    if (_detectionsByTimestamp.containsKey(currentPosition)) {
-      if (mounted) {
-        setState(() {
-          _currentDetections = _detectionsByTimestamp[currentPosition];
-          _currentImageSize = _imageSizeByTimestamp[currentPosition];
-        });
-      }
+    if (mounted) {
+      setState(() {
+        _currentDetections = detections;
+        _currentImageSize = imageSize;
+      });
     }
+  }
+
+  void _showSnack(
+    String message, {
+    CorlyToastType type = CorlyToastType.success,
+  }) {
+    if (!mounted) return;
+    CorlyToast.show(context, message: message, type: type);
   }
 
   Future<void> _pickVideo() async {
@@ -86,37 +126,19 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
           _isVideoInitialized = true;
         });
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Video loaded. Tap "Process Video" to start detection',
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading video: $e'),
-            backgroundColor: Colors.red,
-          ),
+        _showSnack(
+          'Video loaded. Tap "Process Video" to start detection',
+          type: CorlyToastType.success,
         );
       }
+    } catch (e) {
+      _showSnack('Error loading video: $e', type: CorlyToastType.error);
     }
   }
 
   Future<void> _processVideo() async {
     if (_videoController == null || !_isVideoInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a video first'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showSnack('Please select a video first', type: CorlyToastType.warning);
       return;
     }
 
@@ -184,8 +206,8 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
         // Run detection
         await provider.detectFromImage(image);
 
-        // Simpan detection results dengan timestamp (dalam detik)
-        final timestamp = i * frameInterval;
+        // Simpan detection results dengan timestamp yang sesuai frame yang diproses
+        final timestamp = timeMs;
         final detectionCount = provider.detections.length;
 
         if (detectionCount > 0) {
@@ -213,31 +235,17 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
             'Processing complete! Found $_totalDetections bleaching detections in $_totalFramesProcessed frames.';
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Processed $_totalFramesProcessed frames\nFound $_totalDetections bleaching detections',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
+      _showSnack(
+        'Processed $_totalFramesProcessed frames\nFound $_totalDetections bleaching detections',
+        type: CorlyToastType.success,
+      );
     } catch (e) {
       setState(() {
         _isProcessing = false;
         _processingStatus = 'Error: $e';
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error processing video: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showSnack('Error processing video: $e', type: CorlyToastType.error);
     }
   }
 
@@ -270,17 +278,19 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: CorlyColors.background,
       appBar: AppBar(
         title: const Text(
           'Video Detection',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
-        backgroundColor: Colors.orange,
+        backgroundColor: CorlyColors.coralDark,
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           if (_videoFile != null)
             IconButton(
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh_rounded),
               onPressed: _isProcessing ? null : _reset,
               tooltip: 'Reset',
             ),
@@ -293,7 +303,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
               // Video Preview Section
               Expanded(
                 child: Container(
-                  color: Colors.grey.shade100,
+                  color: CorlyColors.background,
                   child: Center(child: _buildVideoPreview()),
                 ),
               ),
@@ -301,14 +311,16 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
               // Statistics Section
               if (_totalFramesProcessed > 0)
                 Container(
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: CorlyColors.surface,
+                    borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, -2),
+                        color: CorlyColors.tealDark.withValues(alpha: 0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
@@ -318,14 +330,14 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                       _buildStatItem(
                         'Frames',
                         _totalFramesProcessed.toString(),
-                        Icons.video_library,
-                        Colors.blue,
+                        Icons.video_library_outlined,
+                        CorlyColors.teal,
                       ),
                       _buildStatItem(
                         'Detections',
                         _totalDetections.toString(),
-                        Icons.search,
-                        Colors.green,
+                        Icons.search_rounded,
+                        CorlyColors.tealDark,
                       ),
                       _buildStatItem(
                         'Avg/Frame',
@@ -333,8 +345,8 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                             ? (_totalDetections / _totalFramesProcessed)
                                   .toStringAsFixed(1)
                             : '0',
-                        Icons.analytics,
-                        Colors.orange,
+                        Icons.analytics_outlined,
+                        CorlyColors.coral,
                       ),
                     ],
                   ),
@@ -342,13 +354,13 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
 
               // Status & Control Buttons
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: CorlyColors.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 8,
                       offset: const Offset(0, -2),
                     ),
                   ],
@@ -359,7 +371,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                     // Status Text
                     if (_processingStatus.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(bottom: 14),
                         child: Row(
                           children: [
                             if (_isProcessing)
@@ -368,14 +380,15 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
+                                  color: CorlyColors.coral,
                                 ),
                               ),
                             if (_isProcessing) const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 _processingStatus,
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
+                                style: const TextStyle(
+                                  color: CorlyColors.textSecondary,
                                   fontSize: 14,
                                 ),
                               ),
@@ -392,13 +405,20 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                           child: ElevatedButton.icon(
                             onPressed: _isProcessing ? null : _pickVideo,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
+                              backgroundColor: CorlyColors.teal,
                               foregroundColor: Colors.white,
+                              elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               disabledBackgroundColor: Colors.grey.shade300,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
-                            icon: const Icon(Icons.video_library),
-                            label: const Text('Pick Video'),
+                            icon: const Icon(Icons.video_library_outlined),
+                            label: const Text(
+                              'Pick Video',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -413,17 +433,26 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                                 : _processVideo,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _isProcessing
-                                  ? Colors.red
-                                  : Colors.green,
+                                  ? Colors.red.shade600
+                                  : CorlyColors.coralDark,
                               foregroundColor: Colors.white,
+                              elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               disabledBackgroundColor: Colors.grey.shade300,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                             icon: Icon(
-                              _isProcessing ? Icons.stop : Icons.play_arrow,
+                              _isProcessing
+                                  ? Icons.stop_rounded
+                                  : Icons.play_arrow_rounded,
                             ),
                             label: Text(
                               _isProcessing ? 'Stop' : 'Process Video',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
@@ -444,20 +473,32 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.video_library, size: 80, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
+          Container(
+            width: 140,
+            height: 140,
+            decoration: BoxDecoration(
+              color: CorlyColors.coral.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.video_library_outlined,
+              size: 64,
+              color: CorlyColors.coral.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
             'No video selected',
             style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w500,
+              fontSize: 17,
+              color: CorlyColors.textPrimary,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Tap "Pick Video" to select a video',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 14, color: CorlyColors.textSecondary),
           ),
         ],
       );
@@ -467,73 +508,85 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
       return const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
+          CircularProgressIndicator(color: CorlyColors.coral),
           SizedBox(height: 16),
-          Text('Loading video...'),
+          Text(
+            'Loading video...',
+            style: TextStyle(color: CorlyColors.textSecondary),
+          ),
         ],
       );
     }
 
-    return AspectRatio(
-      aspectRatio: _videoController!.value.aspectRatio,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          VideoPlayer(_videoController!),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: AspectRatio(
+          aspectRatio: _videoController!.value.aspectRatio,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              VideoPlayer(_videoController!),
 
-          // Bounding box overlay
-          if (_currentDetections != null && _currentImageSize != null)
-            Positioned.fill(
-              child: CustomPaint(
-                painter: BoundingBoxPainter(
-                  detections: _currentDetections!,
-                  imageSize: _currentImageSize!,
+              // Bounding box overlay
+              if (_currentDetections != null && _currentImageSize != null)
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: BoundingBoxPainter(
+                      detections: _currentDetections!,
+                      imageSize: _currentImageSize!,
+                    ),
+                  ),
+                ),
+
+              // Playback controls
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          _videoController!.value.isPlaying
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            if (_videoController!.value.isPlaying) {
+                              _videoController!.pause();
+                            } else {
+                              _videoController!.play();
+                            }
+                          });
+                        },
+                      ),
+                      Expanded(
+                        child: VideoProgressIndicator(
+                          _videoController!,
+                          allowScrubbing: true,
+                          colors: const VideoProgressColors(
+                            playedColor: CorlyColors.coral,
+                            backgroundColor: Colors.white38,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-
-          // Playback controls
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: Colors.black.withOpacity(0.5),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      _videoController!.value.isPlaying
-                          ? Icons.pause
-                          : Icons.play_arrow,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        if (_videoController!.value.isPlaying) {
-                          _videoController!.pause();
-                        } else {
-                          _videoController!.play();
-                        }
-                      });
-                    },
-                  ),
-                  Expanded(
-                    child: VideoProgressIndicator(
-                      _videoController!,
-                      allowScrubbing: true,
-                      colors: const VideoProgressColors(
-                        playedColor: Colors.orange,
-                        backgroundColor: Colors.white38,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -547,19 +600,22 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: color, size: 28),
+        Icon(icon, color: color, size: 26),
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(
-            fontSize: 20,
+          style: const TextStyle(
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
+            color: CorlyColors.textPrimary,
           ),
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          style: const TextStyle(
+            fontSize: 12,
+            color: CorlyColors.textSecondary,
+          ),
         ),
       ],
     );
