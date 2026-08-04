@@ -284,7 +284,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
           'Video Detection',
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
-        backgroundColor: CorlyColors.coralDark,
+        backgroundColor: CorlyColors.tealDark,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -346,7 +346,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                                   .toStringAsFixed(1)
                             : '0',
                         Icons.analytics_outlined,
-                        CorlyColors.coral,
+                        CorlyColors.tealDark,
                       ),
                     ],
                   ),
@@ -380,7 +380,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: CorlyColors.coral,
+                                  color: CorlyColors.teal,
                                 ),
                               ),
                             if (_isProcessing) const SizedBox(width: 12),
@@ -434,7 +434,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _isProcessing
                                   ? Colors.red.shade600
-                                  : CorlyColors.coralDark,
+                                  : CorlyColors.tealDark,
                               foregroundColor: Colors.white,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -477,13 +477,13 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
             width: 140,
             height: 140,
             decoration: BoxDecoration(
-              color: CorlyColors.coral.withValues(alpha: 0.08),
+              color: CorlyColors.teal.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.video_library_outlined,
               size: 64,
-              color: CorlyColors.coral.withValues(alpha: 0.7),
+              color: CorlyColors.teal.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 24),
@@ -575,7 +575,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                           _videoController!,
                           allowScrubbing: true,
                           colors: const VideoProgressColors(
-                            playedColor: CorlyColors.coral,
+                            playedColor: CorlyColors.teal,
                             backgroundColor: Colors.white38,
                           ),
                         ),
