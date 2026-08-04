@@ -69,11 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  CorlyColors.tealDark,
-                  CorlyColors.teal,
+                  Color(0xFF06262B),
+                  Color(0xFF0E3E45),
                   CorlyColors.background,
                 ],
-                stops: [0.0, 0.28, 0.55],
+                stops: [0.0, 0.3, 0.58],
               ),
             ),
             child: SafeArea(
@@ -84,6 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const SizedBox(height: 12),
 
+                    // ==== Logo (background transparan, tanpa bulatan solid) ====
                     Container(
                       width: 170,
                       height: 170,
@@ -91,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            Colors.white.withValues(alpha: 0.22),
+                            Colors.white.withValues(alpha: 0.14),
                             Colors.white.withValues(alpha: 0.0),
                           ],
                           stops: const [0.0, 1.0],
@@ -131,6 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 36),
 
+                    // ==== Feature Cards ====
                     _buildFeatureCard(
                       context,
                       icon: Icons.image_outlined,
