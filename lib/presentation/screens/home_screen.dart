@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../providers/detection_provider.dart';
 import '../../theme/colors.dart';
@@ -97,8 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       padding: const EdgeInsets.all(20),
-                      child: Image.asset(
-                        'assets/images/logo.png',
+                      child: SvgPicture.asset(
+                        'assets/images/logo.svg',
                         fit: BoxFit.contain,
                       ),
                     ),
