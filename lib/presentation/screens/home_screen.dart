@@ -51,129 +51,206 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
-            title: const Text(
-              'Corly',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 20,
-                letterSpacing: 0.3,
-                color: Colors.white,
-              ),
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Corly',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                    letterSpacing: 0.3,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: CorlyColors.tealLight.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: CorlyColors.tealLight.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: const Text(
+                    'AI',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          body: Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF06262B),
-                  Color(0xFF0E3E45),
-                  CorlyColors.background,
-                ],
-                stops: [0.0, 0.3, 0.58],
-              ),
-            ),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 12),
-
-                    // ==== Logo ====
-                    Container(
-                      width: 170,
-                      height: 170,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            Colors.white.withValues(alpha: 0.14),
-                            Colors.white.withValues(alpha: 0.0),
+          body: Column(
+            children: [
+              _buildHeader(context, provider),
+              Expanded(
+                child: Container(
+                  color: CorlyColors.background,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                    child: Column(
+                      children: [
+                        // ==== Feature Cards ====
+                        _buildFeatureCard(
+                          context,
+                          icon: Icons.image_outlined,
+                          title: 'Image Detection',
+                          subtitle: 'Upload foto terumbu karang',
+                          gradient: const [
+                            Color(0xFF1AA6B7),
+                            Color(0xFF0E7C86),
                           ],
-                          stops: const [0.0, 1.0],
+                          enabled:
+                              provider.isInitialized && !provider.isLoading,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ImageDetectionScreen(),
+                              ),
+                            );
+                          },
                         ),
-                      ),
-                      padding: const EdgeInsets.all(20),
-                      child: SvgPicture.asset(
-                        'assets/images/logo.svg',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
-                    // ==== Title ====
-                    const Text(
-                      'Coral Bleaching Detection',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 0.2,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Powered by YOLOv10',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-                    _buildStatusBadge(provider),
-
-                    const SizedBox(height: 36),
-
-                    // ==== Feature Cards ====
-                    _buildFeatureCard(
-                      context,
-                      icon: Icons.image_outlined,
-                      title: 'Image Detection',
-                      subtitle: 'Upload foto terumbu karang',
-                      gradient: const [Color(0xFF1AA6B7), Color(0xFF0E7C86)],
-                      enabled: provider.isInitialized && !provider.isLoading,
-                      onTap: () {
-                        Navigator.push(
+                        _buildFeatureCard(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const ImageDetectionScreen(),
-                          ),
-                        );
-                      },
+                          icon: Icons.video_camera_back_outlined,
+                          title: 'Video Detection',
+                          subtitle: 'Upload video bawah air',
+                          gradient: const [
+                            Color(0xFF5FD1D9),
+                            Color(0xFF1AA6B7),
+                          ],
+                          enabled:
+                              provider.isInitialized && !provider.isLoading,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const VideoDetectionScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-
-                    _buildFeatureCard(
-                      context,
-                      icon: Icons.video_camera_back_outlined,
-                      title: 'Video Detection',
-                      subtitle: 'Upload video bawah air',
-                      gradient: const [Color(0xFF5FD1D9), Color(0xFF1AA6B7)],
-                      enabled: provider.isInitialized && !provider.isLoading,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const VideoDetectionScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         );
       },
+    );
+  }
+
+  /// Header hero: gradient gelap + tepi wave + bubble dekoratif (echo dari
+  /// aksen gelembung di logo), biar nggak polos.
+  Widget _buildHeader(BuildContext context, DetectionProvider provider) {
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    return ClipPath(
+      clipper: _WaveClipper(),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.fromLTRB(24, topPadding + kToolbarHeight, 24, 64),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF06262B), Color(0xFF0E3E45)],
+          ),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.topCenter,
+          children: [
+            // ---- Bubble dekoratif (senada dgn logo) ----
+            Positioned(top: -8, right: 4, child: _bubble(30, 0.08)),
+            Positioned(top: 34, right: 54, child: _bubble(14, 0.16)),
+            Positioned(top: 78, right: 12, child: _bubble(9, 0.22)),
+            Positioned(top: 4, left: -4, child: _bubble(20, 0.08)),
+            Positioned(top: 64, left: 26, child: _bubble(11, 0.14)),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 12),
+
+                // ==== Logo (background transparan, tanpa bulatan solid) ====
+                Container(
+                  width: 170,
+                  height: 170,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.14),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 1.0],
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  child: SvgPicture.asset(
+                    'assets/images/logo.svg',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ==== Title ====
+                const Text(
+                  'Coral Bleaching Detection',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.2,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Menjaga Terumbu Karang dengan AI',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+                _buildStatusBadge(provider),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Titik gelembung kecil buat aksen dekoratif di header.
+  Widget _bubble(double size, double opacity) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: CorlyColors.tealLight.withValues(alpha: opacity),
+      ),
     );
   }
 
@@ -327,4 +404,31 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
+
+/// Bikin tepi bawah header melengkung kayak ombak, bukan garis lurus.
+class _WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, size.height - 46);
+    path.quadraticBezierTo(
+      size.width * 0.25,
+      size.height,
+      size.width * 0.52,
+      size.height - 22,
+    );
+    path.quadraticBezierTo(
+      size.width * 0.78,
+      size.height - 46,
+      size.width,
+      size.height - 12,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
