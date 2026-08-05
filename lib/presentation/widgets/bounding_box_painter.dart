@@ -58,17 +58,39 @@ class BoundingBoxPainter extends CustomPainter {
       );
       textPainter.layout();
 
+      const labelPaddingX = 4.0;
+      const labelPaddingY = 3.0;
+      final labelWidth = textPainter.width + labelPaddingX * 2;
+      final labelHeight = textPainter.height + labelPaddingY * 2;
+      final preferredLabelTop = top - labelHeight - 2;
+      final labelTopCandidate = preferredLabelTop >= 0
+          ? preferredLabelTop
+          : top + height + 2;
+      final labelTop = labelTopCandidate < 0
+          ? 0.0
+          : (labelTopCandidate + labelHeight > size.height
+                ? (size.height - labelHeight).clamp(0.0, size.height)
+                : labelTopCandidate);
+      final labelLeft = left < 0
+          ? 0.0
+          : (left + labelWidth > size.width
+                ? (size.width - labelWidth).clamp(0.0, size.width)
+                : left);
+
       // Draw label background
       final labelRect = Rect.fromLTWH(
-        left,
-        top - 24,
-        textPainter.width + 8,
-        22,
+        labelLeft,
+        labelTop,
+        labelWidth,
+        labelHeight,
       );
       canvas.drawRect(labelRect, labelBgPaint);
 
       // Draw label text
-      textPainter.paint(canvas, Offset(left + 4, top - 22));
+      textPainter.paint(
+        canvas,
+        Offset(labelLeft + labelPaddingX, labelTop + labelPaddingY),
+      );
     }
   }
 
