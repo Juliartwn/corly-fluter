@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 import '../../providers/detection_provider.dart';
 import '../../data/models/detection.dart';
+import '../../core/video_detection_tracker.dart';
 import '../../theme/colors.dart';
 import '../../theme/toast.dart';
 import '../widgets/bounding_box_painter.dart';
@@ -33,6 +34,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
   // Map untuk menyimpan deteksi per timestamp (dalam milidetik)
   final Map<int, List<Detection>> _detectionsByTimestamp = {};
   final Map<int, Size> _imageSizeByTimestamp = {};
+  final VideoDetectionTracker _detectionTracker = VideoDetectionTracker();
 
   // Current detections untuk ditampilkan
   List<Detection>? _currentDetections;
@@ -111,6 +113,9 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
           _totalFramesProcessed = 0;
           _totalDetections = 0;
           _processingStatus = '';
+          _detectionsByTimestamp.clear();
+          _imageSizeByTimestamp.clear();
+          _detectionTracker.reset();
         });
 
         // Initialize video player
@@ -147,6 +152,9 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
       _totalFramesProcessed = 0;
       _totalDetections = 0;
       _processingStatus = 'Initializing...';
+      _detectionsByTimestamp.clear();
+      _imageSizeByTimestamp.clear();
+      _detectionTracker.reset();
     });
 
     final provider = context.read<DetectionProvider>();
@@ -205,6 +213,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
 
         // Run detection
         await provider.detectFromImage(image);
+        _detectionTracker.update(provider.detections);
 
         // Simpan detection results dengan timestamp yang sesuai frame yang diproses
         final timestamp = timeMs;
@@ -220,7 +229,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
 
         setState(() {
           _totalFramesProcessed = i + 1;
-          _totalDetections += detectionCount;
+          _totalDetections = _detectionTracker.uniqueObjectCount;
         });
 
         // Clean up thumbnail file
