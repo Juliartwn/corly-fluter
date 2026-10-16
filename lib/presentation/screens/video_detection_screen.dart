@@ -425,7 +425,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
                             ),
                             icon: const Icon(Icons.video_library_outlined),
                             label: const Text(
-                              'Pick Video',
+                              'PIlih Video',
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -497,7 +497,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'No video selected',
+            'Belum ada video yang dipilih',
             style: TextStyle(
               fontSize: 17,
               color: CorlyColors.textPrimary,
@@ -506,7 +506,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap "Pick Video" to select a video',
+            'Pilih Video untuk mulai deteksi',
             style: TextStyle(fontSize: 14, color: CorlyColors.textSecondary),
           ),
         ],

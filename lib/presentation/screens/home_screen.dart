@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildFeatureCard(
                           context,
                           icon: Icons.image_outlined,
-                          title: 'Image Detection',
+                          title: 'Deteksi gambar',
                           subtitle: 'Upload foto terumbu karang',
                           gradient: const [
                             Color(0xFF1AA6B7),
@@ -126,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildFeatureCard(
                           context,
                           icon: Icons.video_camera_back_outlined,
-                          title: 'Video Detection',
+                          title: 'Deteksi Video',
                           subtitle: 'Upload video bawah air',
                           gradient: const [
                             Color(0xFF5FD1D9),
@@ -213,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // ==== Title ====
                 const Text(
-                  'Coral Bleaching Detection',
+                  'Deteksi Coral Bleaching',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -277,11 +277,11 @@ class _HomeScreenState extends State<HomeScreen> {
         if (provider.isInitialized) {
           icon = Icons.check_circle_rounded;
           color = Colors.greenAccent.shade100;
-          text = 'Ready to Use';
+          text = 'Siap digunakan';
         } else {
           icon = Icons.pending_outlined;
           color = Colors.white70;
-          text = 'Waiting...';
+          text = 'Menunggu inisialisasi...';
         }
         break;
 
