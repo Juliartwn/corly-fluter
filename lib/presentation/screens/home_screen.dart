@@ -30,11 +30,11 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         await provider.initialize();
         if (mounted) {
-          CorlyToast.success(context, 'Model initialized successfully');
+          CorlyToast.success(context, 'Inisialisasi model berhasil');
         }
       } catch (e) {
         if (mounted) {
-          CorlyToast.error(context, 'Failed to initialize: $e');
+          CorlyToast.error(context, 'Gagal inisialisasi model: $e');
         }
       }
     }
@@ -263,13 +263,13 @@ class _HomeScreenState extends State<HomeScreen> {
       case DetectionState.initializing:
         icon = Icons.hourglass_top_rounded;
         color = Colors.amber.shade200;
-        text = 'Initializing Model...';
+        text = 'Inisialisasi model...';
         break;
 
       case DetectionState.error:
         icon = Icons.error_outline_rounded;
         color = Colors.red.shade200;
-        text = 'Initialization Failed';
+        text = 'Gagal inisialisasi model';
         break;
 
       case DetectionState.idle:

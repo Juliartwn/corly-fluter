@@ -290,7 +290,7 @@ class _VideoDetectionScreenState extends State<VideoDetectionScreen> {
       backgroundColor: CorlyColors.background,
       appBar: AppBar(
         title: const Text(
-          'Video Detection',
+          'Deteksi Video',
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         backgroundColor: CorlyColors.tealDark,
